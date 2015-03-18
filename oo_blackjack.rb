@@ -1,4 +1,3 @@
-require 'pry'
 SUITS = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
 FACE_VALUE = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
 
@@ -6,8 +5,8 @@ class Card
   attr_accessor :suit, :face_value
 
   def initialize(s, fv)
-    @suit = s
-    @face_value = fv
+    self.suit = s
+    self.face_value = fv
   end
 
   def pretty_output
@@ -190,6 +189,7 @@ class Game
 
   def display_blackjack_win
     if player.blackjack? && dealer.blackjack?
+      dealer.show_hand
       puts "Two blackjacks!"
       puts "It's a draw"
     elsif player.blackjack?
@@ -234,43 +234,36 @@ class Game
   end
 
   def player_totals
-    puts "Total wins for #{player.name}: #{@@player_wins}."
-    puts "Total wins for Dealer: #{@@dealer_wins}."
+    puts "Total wins for #{player.name}: #{@@player_wins}"
+    puts "Total wins for Dealer: #{@@dealer_wins}"
   end
 
+  def game_engine
+    if player.blackjack? || dealer.blackjack?
+      display_blackjack_win
+    else
+      player_turn
+      if !player.is_busted?
+        dealer_turn
+      end
+      dealer.show_hand
+      winner?
+    end 
+  end
 
   def play
     player_intro
     loop do
       system 'clear'
       initial_deal
-      if player.blackjack? || dealer.blackjack?
-        display_blackjack_win
-      else
-        player_turn
-        if !player.is_busted?
-          dealer_turn
-        end
-        dealer.show_hand
-        winner?
-      end 
-      break if play_again? == 'n'
+      game_engine
+        break if play_again? == 'n'
       reset 
     end
     player_totals
     puts "Thanks for playing!"
-    binding.pry
   end
 
 end
 
 Game.new.play
-
-
-
-
-
-
-
-
-
