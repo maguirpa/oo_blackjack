@@ -1,6 +1,3 @@
-SUITS = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
-FACE_VALUE = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
-
 class Card
   attr_accessor :suit, :face_value
 
@@ -20,12 +17,14 @@ class Card
 end
 
 class Deck
+SUITS = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
+FACE_VALUES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
     attr_accessor :cards
 
   def initialize
     @cards = []
     SUITS.each do |suit|
-      FACE_VALUE.each do |face_value|
+      FACE_VALUES.each do |face_value|
         @cards << Card.new(suit, face_value)
       end
     end
@@ -47,6 +46,7 @@ class Deck
 end
 
 module Hand
+  attr_accessor :cards
 
   def show_hand
     puts "\n-----#{name}'s Hand------"
@@ -90,7 +90,7 @@ end
 
 class Player
   include Hand
-  attr_accessor :name, :cards
+  attr_accessor :name
 
   def initialize(name)
     @name = name
@@ -101,7 +101,7 @@ end
 
 class Dealer
   include Hand
-  attr_accessor :name, :cards
+  attr_accessor :name
 
   def initialize
     @name = "Dealer"
@@ -129,8 +129,8 @@ class Game
 
   def initial_deal
     2.times do
-      @player.add_card(@deck.deal_one)
-      @dealer.add_card(@deck.deal_one)
+      player.add_card(deck.deal_one)
+      dealer.add_card(deck.deal_one)
     end
     player.show_hand
     dealer.initial_show_hand
@@ -143,23 +143,28 @@ class Game
   end
 
   def player_prompt
+    answer = ' '
     loop do
       puts "Would you like to stay(s) or hit(h)?"
-      @answer = gets.chomp.downcase
-      break if @answer == 's' || @answer == 'h'
+      answer = gets.chomp.downcase
+      break if answer == 's' || answer == 'h'
     end
+    answer
   end
 
   def player_turn
     begin
-      player_prompt
-      if @answer == 'h'
-        new_card = @deck.deal_one
+      if player_prompt == 'h'
+        new_card = deck.deal_one
         player.add_card(new_card)
         puts "\n#{player.name} dealt the #{new_card}."
+        system 'clear'
         player.show_hand
+        dealer.initial_show_hand
+      else
+        break
       end
-    end until player.is_busted? || @answer == 's'
+    end until player.is_busted?
   end
 
   def dealer_turn
@@ -170,16 +175,17 @@ class Game
         puts "\n#{dealer.name} dealt the #{new_card}."
       end
     end until dealer.total >= 17
+    dealer.show_hand
   end
 
   def display_results
     puts "\n-----Game Results------"
     puts "#{player.name}'s total is #{player.total}."
     puts "#{dealer.name}'s total is #{dealer.total}."
-    bust?
+    display_message_if_busted
   end
 
-  def bust?
+  def display_message_if_busted
     if player.is_busted?
       puts "#{player.name} is busted."
     elsif dealer.is_busted?
@@ -190,21 +196,21 @@ class Game
   def display_blackjack_win
     if player.blackjack? && dealer.blackjack?
       dealer.show_hand
-      puts "Two blackjacks!"
+      puts "\nTwo blackjacks!"
       puts "It's a draw"
     elsif player.blackjack?
-      puts "#{player.name} has Blackjack!"
+      puts "\n#{player.name} has Blackjack!"
       puts "#{player.name} wins!"
       @@player_wins += 1
     elsif dealer.blackjack?
       dealer.show_hand
-      puts "#{dealer.name} has Blackjack!"
+      puts "\n#{dealer.name} has Blackjack!"
       puts "#{dealer.name} wins!"
       @@dealer_wins += 1
     end
   end
 
-  def winner?
+  def display_winner
     display_results
     if player.is_busted?
       puts "#{dealer.name} wins!"
@@ -225,10 +231,11 @@ class Game
 
   def play_again?
     puts "Press any key to play again or 'n' to quit."
-    play_again = gets.chomp
+    gets.chomp
   end
 
-  def reset
+  def reset_hands
+    @deck = Deck.new
     player.cards = []
     dealer.cards = []
   end
@@ -246,8 +253,7 @@ class Game
       if !player.is_busted?
         dealer_turn
       end
-      dealer.show_hand
-      winner?
+      display_winner
     end 
   end
 
@@ -258,7 +264,7 @@ class Game
       initial_deal
       game_engine
         break if play_again? == 'n'
-      reset 
+      reset_hands
     end
     player_totals
     puts "Thanks for playing!"
